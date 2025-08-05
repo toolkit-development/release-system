@@ -179,11 +179,38 @@ your-project/
    ```
 
 2. **Update Cargo.toml version:**
+
    ```toml
    [package]
    name = "YOUR_CANISTER"
    version = "0.1.0"
    ```
+
+3. **Configure `dfx.json` for deployment networks:**
+
+   ```json
+   {
+     "canisters": {
+       "YOUR_CANISTER": {
+         "candid": "src/YOUR_CANISTER/YOUR_CANISTER.did",
+         "package": "YOUR_CANISTER",
+         "type": "custom",
+         "wasm": "wasm/YOUR_CANISTER.wasm.gz",
+         "build": ["bash scripts/build.sh"]
+       }
+     },
+     "networks": {
+       "dev": {
+         "providers": ["https://icp0.io"],
+         "type": "persistent"
+       }
+     },
+     "output_env_file": ".env",
+     "version": 1
+   }
+   ```
+
+   **Important**: The `dev` network configuration is required for the automatic development deployments to work properly.
 
 ### Customize Build Scripts
 
