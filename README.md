@@ -68,12 +68,22 @@ After installation, configure these secrets in your GitHub repository:
 - `IDENTITY_DEV` - PEM file content for development network deployment
 - `IDENTITY_PROD` - PEM file content for production network deployment
 
+**Deployment Flow:**
+
+- **Development Identity (`IDENTITY_DEV`)**: Automatically deploys on every commit to main branch
+- **Production Identity (`IDENTITY_PROD`)**: Manual deployment only (for safety)
+
 **How to configure:**
 
 1. Go to your GitHub repository
 2. Navigate to Settings → Secrets and variables → Actions
 3. Click 'New repository secret'
 4. Add each secret with the appropriate value
+
+**🔑 For Internet Computer deployment:**
+
+- IDENTITY_DEV: Your development network identity PEM file content
+- IDENTITY_PROD: Your production network identity PEM file content
 
 ## 🛠️ Available Commands
 

@@ -139,6 +139,7 @@ download_release_system() {
     local files=(
         "Makefile"
         "RELEASE.md"
+        "AFTER-RELEASE-SYSTEM-INSTALL.md"
         "scripts/setup-release-system.sh"
         ".github-templates/workflows/ci-cd.yml"
         ".github-templates/workflows/release.yml"
@@ -463,6 +464,7 @@ update_project_references() {
     local files_to_update=(
         "$TEMP_DIR/Makefile"
         "$TEMP_DIR/RELEASE.md"
+        "$TEMP_DIR/AFTER-RELEASE-SYSTEM-INSTALL.md"
         "$TEMP_DIR/.github-templates/workflows/ci-cd.yml"
         "$TEMP_DIR/.github-templates/workflows/release.yml"
         "$TEMP_DIR/.github-templates/workflows/manual-deploy.yml"
