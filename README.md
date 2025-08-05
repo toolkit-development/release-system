@@ -1,27 +1,30 @@
-# Release System Setup
+# Release System
 
-A comprehensive release management system for GitHub repositories with automated versioning, changelog generation, and deployment workflows.
+A comprehensive release management system for Internet Computer canister projects with automated versioning, changelog generation, and deployment workflows.
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Install the Release System
-
-```bash
-# Download and run the setup script
-curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/main/setup.sh | bash
-```
-
-### 2. Initialize in Your Repository
+### Install the Release System
 
 ```bash
-# Navigate to your repository
-cd your-repo
+# One-liner installation (non-interactive)
+curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/setup.sh | bash
 
-# Run the setup
-./setup-release-system.sh
+# Or download and run interactively
+curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/setup.sh -o setup.sh
+chmod +x setup.sh
+./setup.sh
 ```
 
-### 3. Create Your First Release
+The setup script will:
+
+- ✅ Detect your project name from the directory
+- ✅ Customize all templates for your project
+- ✅ Install GitHub Actions workflows
+- ✅ Set up git hooks for commit validation
+- ✅ Configure version management
+
+### Create Your First Release
 
 ```bash
 # Make some changes and commit them
@@ -32,119 +35,175 @@ git commit -m "feat: add new feature"
 make release-patch
 ```
 
-## What Gets Installed
+## 📁 What Gets Installed
 
 The release system adds the following to your repository:
 
 ### Core Files
 
-- **`Makefile`** - Automated release commands
-- **`RELEASE.md`** - Release guide for contributors
+- **`Makefile`** - Automated release commands and version management
+- **`RELEASE.md`** - Quick reference guide for releases
 - **`CHANGELOG.md`** - Automated changelog generation
 - **`.git/hooks/commit-msg`** - Enforces conventional commit format
 
-### GitHub Actions
+### GitHub Actions Workflows
 
-- **`.github/workflows/ci-cd.yml`** - Continuous integration and dev deployment
-- **`.github/workflows/release.yml`** - Automated releases from tags
+- **`.github/workflows/ci-cd.yml`** - Continuous integration and development deployment
+- **`.github/workflows/release.yml`** - Automated releases from git tags
 - **`.github/workflows/manual-deploy.yml`** - Manual production deployment
 
-### Scripts
+### Scripts and Actions
 
-- **`.github/scripts/`** - Build and deployment scripts
-- **`.github/actions/`** - Reusable GitHub Actions
+- **`.github/scripts/`** - Build, checksum, and changelog generation scripts
+- **`.github/actions/`** - Reusable GitHub Actions for deployment and releases
 
-## Available Commands
+## ⚙️ Required Configuration
 
-### Release Commands
+### GitHub Secrets
+
+After installation, configure these secrets in your GitHub repository:
+
+**Required for Internet Computer deployment:**
+
+- `IDENTITY_DEV` - PEM file content for development network deployment
+- `IDENTITY_PROD` - PEM file content for production network deployment
+
+**How to configure:**
+
+1. Go to your GitHub repository
+2. Navigate to Settings → Secrets and variables → Actions
+3. Click 'New repository secret'
+4. Add each secret with the appropriate value
+
+## 🛠️ Available Commands
+
+### Release Management
 
 ```bash
-make release-patch    # Bump patch version (0.1.0 → 0.1.1)
-make release-minor    # Bump minor version (0.1.0 → 0.2.0)
-make release-major    # Bump major version (0.1.0 → 1.0.0)
+make release-patch    # 0.1.0 → 0.1.1 (bug fixes)
+make release-minor    # 0.1.0 → 0.2.0 (new features)
+make release-major    # 0.1.0 → 1.0.0 (breaking changes)
 ```
 
-### Development Commands
+### Development Tools
 
 ```bash
 make check-commits    # Check if commits follow conventions
 make fix-commits      # Interactive rebase to fix commit messages
 make add-changelog    # Add a new changelog entry
+make generate-changelog-content  # Generate changelog from commits
 ```
 
-### Quality Assurance
+### Help
 
 ```bash
-make lint            # Run linting checks
-make test            # Run tests
-make security        # Run security checks
+make help            # Show all available commands
 ```
 
-## Commit Message Format
+## 📝 Commit Message Format
 
 All commits must follow the conventional commit format:
 
 ```
-<type>[optional scope]: <description>
+<type>: <description>
 
-[optional body]
-
-[optional footer(s)]
+Examples:
+feat: add user authentication
+fix: resolve login timeout
+docs: update API documentation
+chore: update dependencies
 ```
 
-### Types
+### Supported Types
 
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
+- `style:` - Code style changes
 - `refactor:` - Code refactoring
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
+- `ci:` - CI/CD changes
+- `build:` - Build system changes
+- `perf:` - Performance improvements
+- `revert:` - Revert previous commits
 
-### Examples
+## 🔄 Release Workflow
 
-```bash
-git commit -m "feat: add user authentication"
-git commit -m "fix: resolve login timeout issue"
-git commit -m "docs: update API documentation"
-git commit -m "chore: update dependencies"
+### Automated Release Process
+
+1. **Make changes and commit with conventional format**
+
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   ```
+
+2. **Create a release**
+
+   ```bash
+   make release-patch    # or release-minor, release-major
+   ```
+
+3. **Review and push**
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: update changelog"
+   git push origin main
+   ```
+
+### What Happens After Release
+
+1. **GitHub Actions** automatically:
+
+   - Builds the canister
+   - Deploys to development network
+   - Creates GitHub release
+   - Uploads assets (WASM, Candid, checksums)
+
+2. **Release assets** include:
+   - `your-project.wasm.gz` - Compiled canister
+   - `your-project.did` - Candid interface
+   - `canister_ids.json` - Canister identifiers
+   - Checksums for verification
+
+## 🏗️ Project Structure
+
+The system assumes this structure (customizable):
+
+```
+your-project/
+├── Cargo.toml (or src/your-project/Cargo.toml)
+├── canister_ids.json
+├── wasm/
+│   └── your-project.wasm.gz
+├── your-project.did
+└── .github/
+    ├── workflows/
+    ├── scripts/
+    └── actions/
 ```
 
-## Release Workflow
+## 🔧 Customization
 
-### Automated Release
+### Project-Specific Configuration
 
-1. Make changes and commit with conventional format
-2. Run `make release-patch` (or minor/major)
-3. Review changelog and commit if needed
-4. Push tag to trigger GitHub release
+The setup script automatically customizes:
 
-### Manual Release
+- All `YOUR_CANISTER` references → your project name
+- File paths and package names
+- GitHub Actions workflows
+- Build and deployment scripts
 
-1. Create a tag: `git tag v1.0.0`
-2. Push tag: `git push origin v1.0.0`
-3. GitHub Actions will create the release automatically
+### Manual Customization
 
-## Configuration
-
-### Customizing the Release System
-
-Edit the following files to customize for your project:
+Edit these files for project-specific needs:
 
 - **`Makefile`** - Modify release commands and workflows
 - **`.github/workflows/*.yml`** - Customize CI/CD pipelines
-- **`scripts/`** - Add project-specific scripts
+- **`.github/scripts/`** - Add project-specific scripts
 
-### Environment Variables
-
-Set these in your GitHub repository settings:
-
-- `DFX_NETWORK` - Internet Computer network (ic, ic_testnet)
-- `CANISTER_ID` - Your canister ID for deployment
-- `GITHUB_TOKEN` - For creating releases (auto-set by GitHub Actions)
-
-## Troubleshooting
+## 🚨 Troubleshooting
 
 ### Common Issues
 
@@ -154,7 +213,7 @@ Set these in your GitHub repository settings:
 # Fix the last commit
 git commit --amend -m "feat: correct commit message"
 
-# Or use the interactive fix
+# Or use interactive fix
 make fix-commits
 ```
 
@@ -175,29 +234,58 @@ make generate-changelog-content
 git push --force-with-lease origin main
 ```
 
-### Getting Help
+**"Deployment fails"**
 
-1. Check the `RELEASE.md` file in your repository
-2. Review the `Makefile` for available commands
-3. Check GitHub Actions logs for deployment issues
+- Check GitHub secrets are configured
+- Verify canister IDs in `canister_ids.json`
+- Review GitHub Actions logs
 
-## Contributing
+### Debug Commands
 
-To contribute to the release system itself:
+```bash
+# Check version extraction
+grep '^version = ' Cargo.toml
+
+# Verify git hooks
+ls -la .git/hooks/
+
+# Test conventional commit
+git commit -m "test: this should fail" --allow-empty
+
+# Check GitHub Actions
+gh run list
+```
+
+## 📚 Additional Resources
+
+- [Conventional Commits](https://www.conventionalcommits.org/)
+- [Keep a Changelog](https://keepachangelog.com/)
+- [Internet Computer Documentation](https://internetcomputer.org/docs/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+
+## 🤝 Contributing
+
+To contribute to the release system:
 
 1. Fork the release-system repository
 2. Make your changes
 3. Test in a sample repository
 4. Submit a pull request
 
-## License
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## Support
+## 🆘 Support
 
 For issues with the release system:
 
 - Create an issue in the release-system repository
 - Check existing issues for solutions
 - Review the documentation in your repository's `RELEASE.md`
+
+---
+
+**Last Updated**: January 2025  
+**Version**: 2.0.0  
+**Status**: ✅ Production Ready

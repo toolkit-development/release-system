@@ -46,25 +46,39 @@ get_project_name() {
     # Try to detect project name from current directory
     local detected_name=$(basename "$(pwd)")
     
-    if [ "$detected_name" != "." ] && [ "$detected_name" != "/" ]; then
-        print_info "Detected project name from directory: $detected_name"
-        read -p "Use this as your project name? (y/n): " -n 1 -r
-        echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Check if we're in an interactive terminal
+    if [ -t 0 ]; then
+        # Interactive mode - prompt the user
+        if [ "$detected_name" != "." ] && [ "$detected_name" != "/" ]; then
+            print_info "Detected project name from directory: $detected_name"
+            read -p "Use this as your project name? (y/n): " -n 1 -r
+            echo ""
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                PROJECT_NAME="$detected_name"
+            fi
+        fi
+        
+        # If no project name set yet, prompt for it
+        while [ -z "$PROJECT_NAME" ]; do
+            read -p "Enter your project name (e.g., my_project): " PROJECT_NAME
+            if [ -z "$PROJECT_NAME" ]; then
+                print_error "Project name cannot be empty"
+            elif [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
+                print_error "Project name must start with a letter and contain only letters, numbers, underscores, and hyphens"
+                PROJECT_NAME=""
+            fi
+        done
+    else
+        # Non-interactive mode - use detected name or default
+        if [ "$detected_name" != "." ] && [ "$detected_name" != "/" ]; then
             PROJECT_NAME="$detected_name"
+            print_info "Non-interactive mode detected. Using project name from directory: $PROJECT_NAME"
+        else
+            PROJECT_NAME="my_canister"
+            print_warning "Non-interactive mode detected. Using default project name: $PROJECT_NAME"
+            print_warning "You may need to manually update project references later."
         fi
     fi
-    
-    # If no project name set yet, prompt for it
-    while [ -z "$PROJECT_NAME" ]; do
-        read -p "Enter your project name (e.g., my_project): " PROJECT_NAME
-        if [ -z "$PROJECT_NAME" ]; then
-            print_error "Project name cannot be empty"
-        elif [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
-            print_error "Project name must start with a letter and contain only letters, numbers, underscores, and hyphens"
-            PROJECT_NAME=""
-        fi
-    done
     
     print_success "Using project name: $PROJECT_NAME"
     echo ""
