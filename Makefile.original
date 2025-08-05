@@ -154,6 +154,182 @@ add-changelog:
 
 add-changelog-entry:
 	@echo "Adding changelog entry for version $(VERSION)..."
+	@if [ ! -f CHANGELOG.md ]; then \
+		echo "# Changelog" > CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+	fi
+	@if ! grep -q "## \[$(VERSION)\]" CHANGELOG.md; then \
+		cp CHANGELOG.md CHANGELOG.md.tmp; \
+		head -n 4 CHANGELOG.md.tmp > CHANGELOG.md; \
+		echo "## [$(VERSION)] - $(date +%Y-%m-%d)" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Added" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Changed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Fixed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Removed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Deprecated" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Security" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Maintenance" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		tail -n +5 CHANGELOG.md.tmp >> CHANGELOG.md; \
+		rm CHANGELOG.md.tmp; \
+		echo "✅ Added changelog entry for version $(VERSION)"; \
+	else \
+		echo "⚠️  Changelog entry for version $(VERSION) already exists"; \
+	fi
+
+generate-changelog-content:
+	@echo "Generating changelog content from commits..."
+	@echo "### Changes" >> CHANGELOG.md
+	@git log --oneline --no-merges $(shell git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | cut -d' ' -f2- | sed 's/^/- /' >> CHANGELOG.md
+	@echo "✅ Changelog content generated"
+
+# Prerequisites check
+check-prerequisites:
+	@echo "Checking prerequisites..."
+	@if [ ! -f "Cargo.toml" ] && [ ! -f "src/YOUR_CANISTER/Cargo.toml" ]; then \
+		echo "❌ Cargo.toml not found in root or src/YOUR_CANISTER/"; \
+		exit 1; \
+	fi
+	@if [ ! -f "CHANGELOG.md" ]; then \
+		echo "❌ CHANGELOG.md not found"; \
+		exit 1; \
+	fi
+	@if ! git status --porcelain | grep -q .; then \
+		echo "❌ Working directory is not clean. Please commit all changes first."; \
+		exit 1; \
+	fi
+	@$(MAKE) check-commit-conventions
+	@echo "✅ Prerequisites check passed"
+
+# Check commit message conventions
+check-commit-conventions:
+	@echo "Checking commit message conventions..."
+	@LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo ""); \
+	if [ -n "$$LAST_TAG" ]; then \
+		INVALID_COMMITS=$$(git log --oneline $$LAST_TAG..HEAD | grep -vE "^[a-f0-9]+ (feat|add|new|implement|change|update|modify|improve|fix|bugfix|resolve|chore|refactor|cleanup|docs|revert|test|ci|build|style|perf):" | head -5); \
+		if [ -n "$$INVALID_COMMITS" ]; then \
+			echo "❌ Found commits without conventional prefixes:"; \
+			echo "$$INVALID_COMMITS"; \
+			echo ""; \
+			echo "Please use conventional commit prefixes:"; \
+			echo "  feat:, add:, new:, implement: - New features"; \
+			echo "  change:, update:, modify:, improve: - Changes"; \
+			echo "  fix:, bugfix:, resolve: - Bug fixes"; \
+			echo "  chore:, refactor:, cleanup:, docs: - Maintenance"; \
+			echo ""; \
+			echo "Examples:"; \
+			echo "  git commit -m \"feat: add user authentication\""; \
+			echo "  git commit -m \"fix: resolve memory leak\""; \
+			echo "  git commit -m \"docs: update README\""; \
+			echo ""; \
+			echo "To fix existing commits, use interactive rebase:"; \
+			echo "  git rebase -i $$LAST_TAG"; \
+			exit 1; \
+		fi; \
+		echo "✅ All commits follow conventional format"; \
+	else \
+		echo "⚠️  No previous tag found, skipping commit convention check"; \
+	fi
+
+# Development targets
+build:
+	@echo "Building project..."
+	@cargo build
+
+test:
+	@echo "Running tests..."
+	@cargo test
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@cargo clean
+	@rm -rf target/
+	@rm -rf wasm/
+
+# Utility targets
+show-changes:
+	@echo "Recent changes:"
+	@git log --oneline -10
+
+show-status:
+	@echo "Git status:"
+	@git status --short
+
+check-commits:
+	@$(MAKE) check-commit-conventions
+
+# Quick fix for the most common commit message patterns
+quick-fix-commits:
+	@echo "Quick commit message fixing..."
+	@LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo ""); \
+	if [ -n "$$LAST_TAG" ]; then \
+		echo "This will automatically fix common commit message patterns:"; \
+		echo "- 'update' -> 'chore: update'"; \
+		echo "- 'Add' -> 'feat: add'"; \
+		echo "- 'fix' -> 'fix: fix'"; \
+		echo "- 'docs' -> 'docs: docs'"; \
+		echo ""; \
+		read -p "Press Enter to continue with automatic fixing..." || true; \
+		git filter-branch --msg-filter ' \
+			sed -e "s/^update /chore: update /" \
+				-e "s/^Add /feat: add /" \
+				-e "s/^fix /fix: fix /" \
+				-e "s/^docs /docs: docs /" \
+		' $$LAST_TAG..HEAD; \
+		echo ""; \
+		echo "✅ Quick fix completed!"; \
+		echo "📋 Run 'make check-commits' to verify the changes."; \
+	else \
+		echo "❌ No previous tag found. Cannot fix commits."; \
+		echo "Please create a tag first: git tag v0.1.0"; \
+	fi
+
+fix-commits:
+	@echo "Starting interactive rebase to fix commit messages..."
+	@echo "This will open an editor where you can modify commit messages."
+	@echo "Make sure to save and exit the editor properly:"
+	@echo "  - Vim: Press 'Esc', then type ':wq' and press Enter"
+	@echo "  - VS Code: Press Ctrl+S to save, then Ctrl+Q to quit"
+	@echo "  - Nano: Press Ctrl+X, then Y, then Enter"
+	@echo ""
+	@read -p "Press Enter to continue..."
+	@git rebase -i HEAD~$(shell git log --oneline | wc -l)
+	@echo "✅ Rebase completed. If you made changes, you may need to force push:"
+	@echo "   git push --force-with-lease origin main"
+
+# Interactive release helper
+interactive-release:
+	@echo "Interactive Release Helper"
+	@echo "========================"
+	@echo "Current version: $(CURRENT_VERSION)"
+	@echo ""
+	@echo "What type of release would you like to create?"
+	@echo "1) Patch release (bug fixes)"
+	@echo "2) Minor release (new features, backward compatible)"
+	@echo "3) Major release (breaking changes)"
+	@echo "4) Exit"
+	@echo ""
+	@read -p "Enter your choice (1-4): " choice; \
+	case $$choice in \
+		1) $(MAKE) release-patch ;; \
+		2) $(MAKE) release-minor ;; \
+		3) $(MAKE) release-major ;; \
+		4) echo "Release cancelled." ;; \
+		*) echo "Invalid choice. Please run 'make interactive-release' again." ;; \
+	esac
+
+# Add changelog entry for current version
+add-changelog-entry:
+	@echo "Adding changelog entry for version $(VERSION)..."
 	@TODAY=$$(date +%Y-%m-%d); \
 	cp CHANGELOG.md CHANGELOG.md.backup; \
 	head -n 6 CHANGELOG.md.backup > CHANGELOG.md; \
@@ -336,3 +512,4 @@ generate-changelog-content:
 			done; \
 			HAS_MAINTENANCE=true; \
 		fi; \
+	fi 
