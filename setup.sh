@@ -79,10 +79,6 @@ download_release_system() {
         "RELEASE.md"
         "CHANGELOG.md"
         "scripts/setup-release-system.sh"
-    )
-    
-    # Files to download from user_registry repository (GitHub Actions and scripts)
-    local github_files=(
         ".github/workflows/ci-cd.yml"
         ".github/workflows/release.yml"
         ".github/workflows/manual-deploy.yml"
@@ -101,20 +97,6 @@ download_release_system() {
     # Download files from release-system repository
     for file in "${files[@]}"; do
         local url="https://raw.githubusercontent.com/$RELEASE_SYSTEM_REPO/$RELEASE_SYSTEM_BRANCH/$file"
-        local target_dir="$TEMP_DIR/$(dirname "$file")"
-        
-        mkdir -p "$target_dir"
-        
-        if curl -fsSL "$url" -o "$TEMP_DIR/$file" 2>/dev/null; then
-            print_success "Downloaded $file"
-        else
-            print_warning "Failed to download $file (will be created from template)"
-        fi
-    done
-    
-    # Download GitHub Actions and scripts from user_registry repository
-    for file in "${github_files[@]}"; do
-        local url="https://raw.githubusercontent.com/toolkit-development/user_registry/master/$file"
         local target_dir="$TEMP_DIR/$(dirname "$file")"
         
         mkdir -p "$target_dir"
