@@ -141,6 +141,7 @@ download_release_system() {
         "RELEASE.md"
         "AFTER-RELEASE-SYSTEM-INSTALL.md"
         "scripts/setup-release-system.sh"
+        "scripts/bump_version.sh"
         ".github-templates/workflows/ci-cd.yml"
         ".github-templates/workflows/release.yml"
         ".github-templates/workflows/manual-deploy.yml"
