@@ -507,7 +507,13 @@ remind_github_secrets() {
     echo ""
     echo "📝 Note: Without these secrets, deployment jobs will fail."
     echo ""
-    read -p "Press Enter to continue with installation..."
+    
+    # Only prompt for input in interactive mode
+    if [ -t 0 ]; then
+        read -p "Press Enter to continue with installation..."
+    else
+        echo "Continuing with installation (non-interactive mode)..."
+    fi
     echo ""
 }
 
