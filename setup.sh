@@ -73,7 +73,7 @@ download_release_system() {
     rm -rf "$TEMP_DIR"
     mkdir -p "$TEMP_DIR"
     
-    # Files to download
+    # Files to download from release-system repository
     local files=(
         "Makefile"
         "RELEASE.md"
@@ -81,9 +81,40 @@ download_release_system() {
         "scripts/setup-release-system.sh"
     )
     
-    # Download each file
+    # Files to download from user_registry repository (GitHub Actions and scripts)
+    local github_files=(
+        ".github/workflows/ci-cd.yml"
+        ".github/workflows/release.yml"
+        ".github/workflows/manual-deploy.yml"
+        ".github/scripts/extract-nns-state.sh"
+        ".github/scripts/create_checksums.sh"
+        ".github/scripts/setup-nns-state.sh"
+        ".github/scripts/README.md"
+        ".github/scripts/build.sh"
+        ".github/scripts/add_prod_release_body.sh"
+        ".github/scripts/generate_changelog.sh"
+        ".github/actions/deploy/action.yml"
+        ".github/actions/release/action.yml"
+        ".github/actions/build/action.yml"
+    )
+    
+    # Download files from release-system repository
     for file in "${files[@]}"; do
         local url="https://raw.githubusercontent.com/$RELEASE_SYSTEM_REPO/$RELEASE_SYSTEM_BRANCH/$file"
+        local target_dir="$TEMP_DIR/$(dirname "$file")"
+        
+        mkdir -p "$target_dir"
+        
+        if curl -fsSL "$url" -o "$TEMP_DIR/$file" 2>/dev/null; then
+            print_success "Downloaded $file"
+        else
+            print_warning "Failed to download $file (will be created from template)"
+        fi
+    done
+    
+    # Download GitHub Actions and scripts from user_registry repository
+    for file in "${github_files[@]}"; do
+        local url="https://raw.githubusercontent.com/toolkit-development/user_registry/master/$file"
         local target_dir="$TEMP_DIR/$(dirname "$file")"
         
         mkdir -p "$target_dir"
@@ -102,8 +133,13 @@ download_release_system() {
 create_template_files() {
     print_info "Creating template files..."
     
-    # Create scripts directory
+    # Create directory structure
     mkdir -p "$TEMP_DIR/scripts"
+    mkdir -p "$TEMP_DIR/.github/workflows"
+    mkdir -p "$TEMP_DIR/.github/scripts"
+    mkdir -p "$TEMP_DIR/.github/actions/deploy"
+    mkdir -p "$TEMP_DIR/.github/actions/release"
+    mkdir -p "$TEMP_DIR/.github/actions/build"
     
     # Create Makefile if not downloaded
     if [ ! -f "$TEMP_DIR/Makefile" ]; then
@@ -384,6 +420,7 @@ install_release_system() {
     
     # Make scripts executable
     chmod +x scripts/setup-release-system.sh 2>/dev/null || true
+    chmod +x .github/scripts/*.sh 2>/dev/null || true
     
     # Create git hook for commit message validation
     print_info "Setting up git hooks..."
