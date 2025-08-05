@@ -398,9 +398,16 @@ install_release_system() {
     print_info "Installing release system..."
     
     # Copy files to current directory (including hidden files)
-    shopt -s dotglob 2>/dev/null || true
-    cp -r "$TEMP_DIR"/* .
-    shopt -u dotglob 2>/dev/null || true
+    # Enable dotglob for bash, or use alternative for zsh
+    if [ -n "$BASH_VERSION" ]; then
+        shopt -s dotglob 2>/dev/null || true
+        cp -r "$TEMP_DIR"/* .
+        shopt -u dotglob 2>/dev/null || true
+    else
+        # For zsh or other shells, copy hidden files explicitly
+        cp -r "$TEMP_DIR"/* . 2>/dev/null || true
+        cp -r "$TEMP_DIR"/.[^.]* . 2>/dev/null || true
+    fi
     
     # Rename .github-templates to .github if it exists
     if [ -d ".github-templates" ]; then
