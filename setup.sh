@@ -77,7 +77,6 @@ download_release_system() {
     local files=(
         "Makefile"
         "RELEASE.md"
-        "CHANGELOG.md"
         "scripts/setup-release-system.sh"
         ".github-templates/workflows/ci-cd.yml"
         ".github-templates/workflows/release.yml"
