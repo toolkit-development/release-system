@@ -648,6 +648,8 @@ main() {
     echo "4. Create your first release:"
     echo "   make release-patch"
     echo ""
+    echo "📖 See AFTER-RELEASE-SYSTEM-INSTALL.md for the required next steps!"
+    echo ""
     echo "📖 See RELEASE.md for detailed usage instructions"
     echo "📖 See README.md for comprehensive documentation"
 }
