@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Simple one-liner installation script
-# Usage: curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/install.sh | bash
 
 set -e
 
