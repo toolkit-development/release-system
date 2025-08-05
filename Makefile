@@ -35,7 +35,8 @@ help:
 	@echo ""
 
 # Get current version from Cargo.toml
-CURRENT_VERSION := $(shell grep '^version = ' Cargo.toml | cut -d'"' -f2)
+# Try to find version in the correct location (workspace vs package)
+CURRENT_VERSION := $(shell if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2; else grep '^version = ' Cargo.toml | cut -d'"' -f2; fi)
 MAJOR := $(shell echo $(CURRENT_VERSION) | cut -d. -f1)
 MINOR := $(shell echo $(CURRENT_VERSION) | cut -d. -f2)
 PATCH := $(shell echo $(CURRENT_VERSION) | cut -d. -f3)
@@ -104,8 +105,8 @@ release-major:
 # Prerequisites check
 check-prerequisites:
 	@echo "Checking prerequisites..."
-	@if [ ! -f "Cargo.toml" ]; then \
-		echo "❌ Cargo.toml not found"; \
+	@if [ ! -f "Cargo.toml" ] && [ ! -f "src/YOUR_CANISTER/Cargo.toml" ]; then \
+		echo "❌ Cargo.toml not found in root or src/YOUR_CANISTER/"; \
 		exit 1; \
 	fi
 	@if [ ! -f "CHANGELOG.md" ]; then \
