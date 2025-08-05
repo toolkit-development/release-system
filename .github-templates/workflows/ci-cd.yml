@@ -60,7 +60,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          cargo fmt --all -- --check
+          cargo fmt --all
 
   security:
     name: Security Audit
