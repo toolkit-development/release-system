@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 RELEASE_SYSTEM_REPO="toolkit-development/release-system"
-RELEASE_SYSTEM_BRANCH="main"
+RELEASE_SYSTEM_BRANCH="master"
 TEMP_DIR="/tmp/release-system-setup"
 
 # Print colored output

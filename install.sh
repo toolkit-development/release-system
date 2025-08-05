@@ -21,7 +21,7 @@ mkdir -p "$TEMP_DIR"
 
 # Download the main setup script
 echo "📥 Downloading release system..."
-curl -fsSL "https://raw.githubusercontent.com/toolkit-development/release-system/main/setup.sh" -o "$TEMP_DIR/setup.sh"
+curl -fsSL "https://raw.githubusercontent.com/toolkit-development/release-system/master/setup.sh" -o "$TEMP_DIR/setup.sh"
 
 # Make it executable and run it
 chmod +x "$TEMP_DIR/setup.sh"
