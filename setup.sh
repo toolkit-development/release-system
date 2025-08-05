@@ -79,19 +79,6 @@ download_release_system() {
         "RELEASE.md"
         "CHANGELOG.md"
         "scripts/setup-release-system.sh"
-        ".github/workflows/ci-cd.yml"
-        ".github/workflows/release.yml"
-        ".github/workflows/manual-deploy.yml"
-        ".github/scripts/extract-nns-state.sh"
-        ".github/scripts/create_checksums.sh"
-        ".github/scripts/setup-nns-state.sh"
-        ".github/scripts/README.md"
-        ".github/scripts/build.sh"
-        ".github/scripts/add_prod_release_body.sh"
-        ".github/scripts/generate_changelog.sh"
-        ".github/actions/deploy/action.yml"
-        ".github/actions/release/action.yml"
-        ".github/actions/build/action.yml"
     )
     
     # Download each file
@@ -115,12 +102,7 @@ download_release_system() {
 create_template_files() {
     print_info "Creating template files..."
     
-    # Create .github directory structure
-    mkdir -p "$TEMP_DIR/.github/workflows"
-    mkdir -p "$TEMP_DIR/.github/scripts"
-    mkdir -p "$TEMP_DIR/.github/actions/deploy"
-    mkdir -p "$TEMP_DIR/.github/actions/release"
-    mkdir -p "$TEMP_DIR/.github/actions/build"
+    # Create scripts directory
     mkdir -p "$TEMP_DIR/scripts"
     
     # Create Makefile if not downloaded
@@ -402,7 +384,6 @@ install_release_system() {
     
     # Make scripts executable
     chmod +x scripts/setup-release-system.sh 2>/dev/null || true
-    chmod +x .github/scripts/*.sh 2>/dev/null || true
     
     # Create git hook for commit message validation
     print_info "Setting up git hooks..."
@@ -437,9 +418,18 @@ update_cargo_version() {
         print_info "Updating Cargo.toml version..."
         if ! grep -q '^version = ' Cargo.toml; then
             print_warning "No version found in Cargo.toml, adding version 0.1.0"
-            sed -i.bak '1i\
+            # Add version after [package] section, not at the beginning
+            if grep -q '^\[package\]' Cargo.toml; then
+                # Insert after [package] line
+                sed -i.bak '/^\[package\]/a\
 version = "0.1.0"
 ' Cargo.toml
+            else
+                # If no [package] section, add at the beginning
+                sed -i.bak '1i\
+version = "0.1.0"
+' Cargo.toml
+            fi
         fi
         print_success "Cargo.toml version configured"
     fi
