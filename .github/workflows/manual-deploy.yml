@@ -1,0 +1,256 @@
+name: Manual Production Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  get-version:
+    name: Get Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          echo "🔍 Extracting version from Cargo.toml..."
+
+          # Check if Cargo.toml exists
+          if [ ! -f "src/user_registry/Cargo.toml" ]; then
+            echo "❌ ERROR: src/user_registry/Cargo.toml not found"
+            echo "Current directory: $(pwd)"
+            echo "Available files:"
+            ls -la src/user_registry/ || echo "src/user_registry/ directory not found"
+            exit 1
+          fi
+
+          # Extract version with better error handling
+          VERSION_LINE=$(grep '^version = ' src/user_registry/Cargo.toml)
+          if [ $? -ne 0 ]; then
+            echo "❌ ERROR: Could not find 'version = ' line in Cargo.toml"
+            echo "Cargo.toml content:"
+            cat src/user_registry/Cargo.toml
+            exit 1
+          fi
+
+          VERSION=$(echo "$VERSION_LINE" | cut -d'"' -f2)
+          echo "Version line found: '$VERSION_LINE'"
+          echo "Extracted version: '$VERSION'"
+
+          if [ -z "$VERSION" ]; then
+            echo "❌ ERROR: Failed to extract version from line: '$VERSION_LINE'"
+            exit 1
+          fi
+
+          # Validate version format (basic check)
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "❌ ERROR: Invalid version format: '$VERSION' (expected x.y.z)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version extracted successfully: $VERSION"
+
+  deploy-prod:
+    name: Deploy to Production (v${{ needs.get-version.outputs.version }})
+    runs-on: ubuntu-latest
+    needs: [get-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build canister for deployment
+        run: |
+          echo "🔨 Building canister for version ${{ needs.get-version.outputs.version }}..."
+          bash .github/scripts/build.sh
+          echo "✅ Build completed for version ${{ needs.get-version.outputs.version }}"
+
+      - name: Generate checksums
+        run: |
+          VERSION="${{ needs.get-version.outputs.version }}"
+          echo "🔍 Version from get-version job: '$VERSION'"
+
+          if [ -z "$VERSION" ]; then
+            echo "⚠️ Version from get-version job is empty, extracting locally..."
+            echo "Current directory: $(pwd)"
+            echo "Checking if Cargo.toml exists..."
+            ls -la src/user_registry/Cargo.toml || echo "Cargo.toml not found"
+            
+            VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+            echo "📋 Locally extracted version: '$VERSION'"
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "❌ ERROR: Could not determine version"
+            echo "This means both get-version job and local extraction failed"
+            exit 1
+          fi
+
+          echo "✅ Using version: '$VERSION'"
+          bash .github/scripts/create_checksums.sh "$VERSION"
+
+      - name: Verify build artifacts
+        run: |
+          echo "🔍 Verifying build artifacts for version ${{ needs.get-version.outputs.version }}..."
+          ls -la wasm/
+          ls -la *.did
+          ls -la canister_ids.json
+          echo "✅ Build artifacts verified for version ${{ needs.get-version.outputs.version }}"
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+
+      - name: Setup dfx identity (Production)
+        run: |
+          echo "Setting up production identity..."
+          if [ -z "${{ secrets.IDENTITY_PROD }}" ]; then
+            echo "❌ ERROR: IDENTITY_PROD secret is not set!"
+            exit 1
+          fi
+          echo "${{ secrets.IDENTITY_PROD }}" > identity.pem
+          echo "Identity PEM file created (length: $(wc -c < identity.pem) bytes)"
+          dfx identity import deploy-prod-identity identity.pem --disable-encryption || true
+          dfx identity use deploy-prod-identity
+
+      - name: Deploy to Production Network
+        run: |
+          dfx deploy --network ic --no-wallet
+        env:
+          DFX_NETWORK: ic
+          DFX_WARNING: -mainnet_plaintext_identity
+
+      - name: Generate release body
+        id: release_body
+        run: |
+          # Extract changelog content for the current version
+          CHANGELOG_CONTENT=""
+          VERSION="${{ needs.get-version.outputs.version }}"
+          if [ -z "$VERSION" ]; then
+            echo "⚠️ Version from get-version job is empty, extracting locally for release body..."
+            VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+            echo "📋 Using locally extracted version: '$VERSION'"
+          fi
+
+          if [ -f "CHANGELOG.md" ]; then
+            echo "🔍 Looking for changelog entry for version $VERSION..."
+            # Extract the specific version entry from CHANGELOG.md
+            # Extract the specific changelog entry for this version using sed
+            CHANGELOG_CONTENT=$(sed -n "/^## \\[$VERSION\\]/,/^## \\[/p" CHANGELOG.md | sed '$d')
+            
+            if [ -z "$CHANGELOG_CONTENT" ]; then
+              echo "⚠️ No changelog entry found for version $VERSION, using fallback content"
+              echo "## [$VERSION] - $(date +%Y-%m-%d)" > changelog_temp.txt
+              echo "" >> changelog_temp.txt
+              echo "### Added" >> changelog_temp.txt
+              echo "- Release for version $VERSION" >> changelog_temp.txt
+              CHANGELOG_CONTENT=$(cat changelog_temp.txt)
+              rm changelog_temp.txt
+            else
+              echo "✅ Found changelog entry for version $VERSION"
+            fi
+          else
+            echo "⚠️ CHANGELOG.md not found, using fallback content"
+            echo "## [$VERSION] - $(date +%Y-%m-%d)" > changelog_temp.txt
+            echo "" >> changelog_temp.txt
+            echo "### Added" >> changelog_temp.txt
+            echo "- Release for version $VERSION" >> changelog_temp.txt
+            CHANGELOG_CONTENT=$(cat changelog_temp.txt)
+            rm changelog_temp.txt
+          fi
+
+          # Create release body with proper formatting
+          echo "Production deployment successful" > release_body.txt
+          echo "" >> release_body.txt
+          echo "Version: $VERSION" >> release_body.txt
+          echo "Commit: ${{ github.sha }}" >> release_body.txt
+          echo "" >> release_body.txt
+          echo "This is an automated production release." >> release_body.txt
+          echo "" >> release_body.txt
+          echo "## Changelog" >> release_body.txt
+          echo "$CHANGELOG_CONTENT" >> release_body.txt
+
+          # Set the release body from file content
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          cat release_body.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Production Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.get-version.outputs.version }}
+          release_name: v${{ needs.get-version.outputs.version }}
+          body: ${{ steps.release_body.outputs.release_body }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./wasm/user_registry.wasm.gz
+          asset_name: user_registry.wasm.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Candid Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./user_registry.did
+          asset_name: user_registry.did
+          asset_content_type: text/plain
+
+      - name: Upload Canister IDs Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./canister_ids.json
+          asset_name: canister_ids.json
+          asset_content_type: application/json
+
+      - name: Upload Checksums Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./checksums.txt
+          asset_name: checksums.txt
+          asset_content_type: text/plain
