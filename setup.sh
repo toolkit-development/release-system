@@ -551,7 +551,11 @@ install_release_system() {
     
     # Handle .github-templates separately - copy contents directly to .github
     if [ -d "$TEMP_DIR/.github-templates" ]; then
-        cp -r "$TEMP_DIR/.github-templates" .github
+        # Create .github directory if it doesn't exist
+        mkdir -p .github
+        
+        # Copy contents of .github-templates directly to .github
+        cp -r "$TEMP_DIR/.github-templates"/* .github/
         print_success "Copied .github-templates contents to .github"
     fi
     
