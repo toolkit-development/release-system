@@ -424,6 +424,9 @@ update_cargo_version() {
                 sed -i.bak '/^\[package\]/a\
 version = "0.1.0"
 ' Cargo.toml
+            elif grep -q '^\[workspace\]' Cargo.toml; then
+                # For workspace projects, don't add version at all
+                print_warning "Workspace project detected, skipping version addition"
             else
                 # If no [package] section, add at the beginning
                 sed -i.bak '1i\
