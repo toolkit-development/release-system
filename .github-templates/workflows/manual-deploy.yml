@@ -27,20 +27,20 @@ jobs:
           echo "🔍 Extracting version from Cargo.toml..."
 
           # Check if Cargo.toml exists
-          if [ ! -f "src/user_registry/Cargo.toml" ]; then
-            echo "❌ ERROR: src/user_registry/Cargo.toml not found"
+          if [ ! -f "src/YOUR_CANISTER/Cargo.toml" ]; then
+            echo "❌ ERROR: src/YOUR_CANISTER/Cargo.toml not found"
             echo "Current directory: $(pwd)"
             echo "Available files:"
-            ls -la src/user_registry/ || echo "src/user_registry/ directory not found"
+            ls -la src/YOUR_CANISTER/ || echo "src/YOUR_CANISTER/ directory not found"
             exit 1
           fi
 
           # Extract version with better error handling
-          VERSION_LINE=$(grep '^version = ' src/user_registry/Cargo.toml)
+          VERSION_LINE=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml)
           if [ $? -ne 0 ]; then
             echo "❌ ERROR: Could not find 'version = ' line in Cargo.toml"
             echo "Cargo.toml content:"
-            cat src/user_registry/Cargo.toml
+            cat src/YOUR_CANISTER/Cargo.toml
             exit 1
           fi
 
@@ -103,9 +103,9 @@ jobs:
             echo "⚠️ Version from get-version job is empty, extracting locally..."
             echo "Current directory: $(pwd)"
             echo "Checking if Cargo.toml exists..."
-            ls -la src/user_registry/Cargo.toml || echo "Cargo.toml not found"
+            ls -la src/YOUR_CANISTER/Cargo.toml || echo "Cargo.toml not found"
             
-            VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+            VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2)
             echo "📋 Locally extracted version: '$VERSION'"
           fi
 
@@ -143,10 +143,13 @@ jobs:
 
       - name: Deploy to Production Network
         run: |
-          dfx deploy --network ic --no-wallet
-        env:
-          DFX_NETWORK: ic
-          DFX_WARNING: -mainnet_plaintext_identity
+          echo "🚀 Deploying to production network..."
+          echo "Current version: $VERSION"
+
+          # Deploy to production network
+          dfx canister install --network ic YOUR_CANISTER --mode upgrade --wasm wasm/YOUR_CANISTER.wasm.gz
+
+          echo "✅ Deployment to production network completed"
 
       - name: Generate release body
         id: release_body
@@ -156,7 +159,7 @@ jobs:
           VERSION="${{ needs.get-version.outputs.version }}"
           if [ -z "$VERSION" ]; then
             echo "⚠️ Version from get-version job is empty, extracting locally for release body..."
-            VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+            VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2)
             echo "📋 Using locally extracted version: '$VERSION'"
           fi
 
@@ -221,18 +224,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./wasm/user_registry.wasm.gz
-          asset_name: user_registry.wasm.gz
+          asset_path: ./wasm/YOUR_CANISTER.wasm.gz
+          asset_name: YOUR_CANISTER.wasm.gz
           asset_content_type: application/gzip
 
-      - name: Upload Candid Asset
+      - name: Upload Candid Interface
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./user_registry.did
-          asset_name: user_registry.did
+          asset_path: ./YOUR_CANISTER.did
+          asset_name: YOUR_CANISTER.did
           asset_content_type: text/plain
 
       - name: Upload Canister IDs Asset

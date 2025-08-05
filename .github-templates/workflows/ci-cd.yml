@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths-ignore:
-      - "src/user_registry/Cargo.toml"
+      - "src/YOUR_CANISTER/Cargo.toml"
   pull_request:
     branches: [master]
 
@@ -25,7 +25,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+          VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
@@ -194,9 +194,9 @@ jobs:
             echo "⚠️ Version from get-version job is empty, extracting locally..."
             echo "Current directory: $(pwd)"
             echo "Checking if Cargo.toml exists..."
-            ls -la src/user_registry/Cargo.toml || echo "Cargo.toml not found"
+            ls -la src/YOUR_CANISTER/Cargo.toml || echo "Cargo.toml not found"
             
-            VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+            VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2)
             echo "📋 Locally extracted version: '$VERSION'"
           fi
 
@@ -213,12 +213,12 @@ jobs:
         id: upload-artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: user-registry-canister
+          name: YOUR_CANISTER-canister
           path: |
-            wasm/user_registry.wasm.gz
-            wasm/user_registry.wasm.gz.sha256
-            user_registry.did
-            user_registry.did.sha256
+            wasm/YOUR_CANISTER.wasm.gz
+            wasm/YOUR_CANISTER.wasm.gz.sha256
+            YOUR_CANISTER.did
+            YOUR_CANISTER.did.sha256
             canister_ids.json
             canister_ids.json.sha256
             checksums.txt
@@ -235,7 +235,7 @@ jobs:
       - name: Check version bump and generate changelog
         run: |
           # Get current version from Cargo.toml
-          CURRENT_VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+          CURRENT_VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2)
           echo "Current version: $CURRENT_VERSION"
 
           # Get the latest release tag, handle case where no tags exist
@@ -250,7 +250,7 @@ jobs:
             # Compare versions using sort -V (version sort)
             if [ "$(printf '%s\n' "$LATEST_VERSION" "$CURRENT_VERSION" | sort -V | head -n1)" = "$CURRENT_VERSION" ]; then
               echo "❌ Version $CURRENT_VERSION is not greater than $LATEST_VERSION"
-              echo "Please bump the version in src/user_registry/Cargo.toml before deploying"
+              echo "Please bump the version in src/YOUR_CANISTER/Cargo.toml before deploying"
               exit 1
             fi
 
@@ -271,7 +271,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: user-registry-canister
+          name: YOUR_CANISTER-canister
           path: .
 
       - name: Install dfx
@@ -292,10 +292,10 @@ jobs:
       - name: Deploy to Dev Network
         run: |
           echo "🚀 Installing pre-built WASM to dev network..."
-          echo "WASM file: $(ls -la wasm/user_registry.wasm.gz)"
+          echo "WASM file: $(ls -la wasm/YOUR_CANISTER.wasm.gz)"
 
           # Install the pre-built WASM file directly
-          dfx canister install --network dev user_registry --mode upgrade --wasm wasm/user_registry.wasm.gz
+          dfx canister install --network dev YOUR_CANISTER --mode upgrade --wasm wasm/YOUR_CANISTER.wasm.gz
 
           echo "✅ Dev deployment completed using pre-built WASM"
         env:
@@ -310,6 +310,6 @@ jobs:
           cat checksums.txt
           echo "=========================================="
           echo "🔍 Individual checksums:"
-          cat wasm/user_registry.wasm.gz.sha256
-          cat user_registry.did.sha256
+          cat wasm/YOUR_CANISTER.wasm.gz.sha256
+          cat YOUR_CANISTER.did.sha256
           cat canister_ids.json.sha256

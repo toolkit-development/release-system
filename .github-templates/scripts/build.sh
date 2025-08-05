@@ -1,7 +1,7 @@
-cargo test candid -p user_registry
+#!/bin/bash
 
-cargo build -p user_registry --release --target wasm32-unknown-unknown
-
-gzip -c target/wasm32-unknown-unknown/release/user_registry.wasm > target/wasm32-unknown-unknown/release/user_registry.wasm.gz
-
-cp target/wasm32-unknown-unknown/release/user_registry.wasm.gz wasm/user_registry.wasm.gz
+cargo test candid -p YOUR_CANISTER
+cargo build -p YOUR_CANISTER --release --target wasm32-unknown-unknown
+gzip -c target/wasm32-unknown-unknown/release/YOUR_CANISTER.wasm > target/wasm32-unknown-unknown/release/YOUR_CANISTER.wasm.gz
+mkdir -p wasm
+cp target/wasm32-unknown-unknown/release/YOUR_CANISTER.wasm.gz wasm/YOUR_CANISTER.wasm.gz

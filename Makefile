@@ -35,7 +35,15 @@ help:
 	@echo ""
 
 # Get current version from Cargo.toml
-CURRENT_VERSION := $(shell grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2)
+CURRENT_VERSION := $(shell grep '^version = ' Cargo.toml | cut -d'"' -f2)
+MAJOR := $(shell echo $(CURRENT_VERSION) | cut -d. -f1)
+MINOR := $(shell echo $(CURRENT_VERSION) | cut -d. -f2)
+PATCH := $(shell echo $(CURRENT_VERSION) | cut -d. -f3)
+
+# Calculate new versions
+NEW_PATCH_VERSION := $(MAJOR).$(MINOR).$(shell echo $(PATCH) + 1 | bc)
+NEW_MINOR_VERSION := $(MAJOR).$(shell echo $(MINOR) + 1 | bc).0
+NEW_MAJOR_VERSION := $(shell echo $(MAJOR) + 1 | bc).0.0
 
 # Version bumping targets
 bump-patch:
@@ -81,22 +89,22 @@ release: check-prerequisites
 	@git push origin v$(CURRENT_VERSION)
 	@echo "✅ Release v$(CURRENT_VERSION) created and pushed!"
 
-release-patch: bump-patch
-	@echo "Creating patch release..."
-	@$(MAKE) release
+release-patch:
+	@echo "Creating patch release $(NEW_PATCH_VERSION)..."
+	@$(MAKE) _create-release VERSION=$(NEW_PATCH_VERSION)
 
-release-minor: bump-minor
-	@echo "Creating minor release..."
-	@$(MAKE) release
+release-minor:
+	@echo "Creating minor release $(NEW_MINOR_VERSION)..."
+	@$(MAKE) _create-release VERSION=$(NEW_MINOR_VERSION)
 
-release-major: bump-major
-	@echo "Creating major release..."
-	@$(MAKE) release
+release-major:
+	@echo "Creating major release $(NEW_MAJOR_VERSION)..."
+	@$(MAKE) _create-release VERSION=$(NEW_MAJOR_VERSION)
 
 # Prerequisites check
 check-prerequisites:
 	@echo "Checking prerequisites..."
-	@if [ ! -f "src/user_registry/Cargo.toml" ]; then \
+	@if [ ! -f "Cargo.toml" ]; then \
 		echo "❌ Cargo.toml not found"; \
 		exit 1; \
 	fi
@@ -195,37 +203,17 @@ quick-fix-commits:
 	fi
 
 fix-commits:
-	@echo "Interactive commit fixing..."
-	@LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo ""); \
-	if [ -n "$$LAST_TAG" ]; then \
-		echo "Starting interactive rebase from $$LAST_TAG..."; \
-		echo ""; \
-		echo "📝 Instructions:"; \
-		echo "1. In the editor that opens, you'll see a list of commits"; \
-		echo "2. Change 'pick' to 'reword' for commits you want to edit"; \
-		echo "3. Save and close the editor (Ctrl+X in nano, :wq in vim)"; \
-		echo "4. For each 'reword' commit, another editor will open"; \
-		echo "5. Edit the commit message to add conventional prefixes:"; \
-		echo "   - feat: for new features"; \
-		echo "   - fix: for bug fixes"; \
-		echo "   - docs: for documentation"; \
-		echo "   - chore: for maintenance"; \
-		echo "6. Save and close each editor"; \
-		echo ""; \
-		echo "💡 Tips:"; \
-		echo "- If you want to cancel, change 'pick' to 'drop'"; \
-		echo "- If you make a mistake, run 'git rebase --abort'"; \
-		echo "- To continue after fixing conflicts: 'git rebase --continue'"; \
-		echo ""; \
-		read -p "Press Enter to continue with interactive rebase..." || true; \
-		git rebase -i $$LAST_TAG; \
-		echo ""; \
-		echo "✅ Interactive rebase completed!"; \
-		echo "📋 Run 'make check-commits' to verify the changes."; \
-	else \
-		echo "❌ No previous tag found. Cannot start interactive rebase."; \
-		echo "Please create a tag first: git tag v0.1.0"; \
-	fi
+	@echo "Starting interactive rebase to fix commit messages..."
+	@echo "This will open an editor where you can modify commit messages."
+	@echo "Make sure to save and exit the editor properly:"
+	@echo "  - Vim: Press 'Esc', then type ':wq' and press Enter"
+	@echo "  - VS Code: Press Ctrl+S to save, then Ctrl+Q to quit"
+	@echo "  - Nano: Press Ctrl+X, then Y, then Enter"
+	@echo ""
+	@read -p "Press Enter to continue..."
+	@git rebase -i HEAD~$(shell git log --oneline | wc -l)
+	@echo "✅ Rebase completed. If you made changes, you may need to force push:"
+	@echo "   git push --force-with-lease origin main"
 
 # Interactive release helper
 interactive-release:
@@ -250,18 +238,18 @@ interactive-release:
 
 # Add changelog entry for current version
 add-changelog-entry:
-	@echo "Adding changelog entry for version $(CURRENT_VERSION)..."
+	@echo "Adding changelog entry for version $(VERSION)..."
 	@TODAY=$$(date +%Y-%m-%d); \
 	cp CHANGELOG.md CHANGELOG.md.backup; \
 	head -n 6 CHANGELOG.md.backup > CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
-	echo "## [$(CURRENT_VERSION)] - $$TODAY" >> CHANGELOG.md; \
+	echo "## [$(VERSION)] - $$TODAY" >> CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
 	$(MAKE) generate-changelog-content >> CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
 	tail -n +7 CHANGELOG.md.backup >> CHANGELOG.md; \
 	rm CHANGELOG.md.backup
-	@echo "✅ Added changelog entry for version $(CURRENT_VERSION)"
+	@echo "✅ Added changelog entry for version $(VERSION)"
 	@echo "📝 Please review and edit CHANGELOG.md if needed"
 
 # Generate changelog content from git commits

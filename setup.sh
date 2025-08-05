@@ -17,6 +17,9 @@ RELEASE_SYSTEM_REPO="toolkit-development/release-system"
 RELEASE_SYSTEM_BRANCH="master"
 TEMP_DIR="/tmp/release-system-setup"
 
+# Global variable to store project name
+PROJECT_NAME=""
+
 # Print colored output
 print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
@@ -32,6 +35,51 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}❌ $1${NC}"
+}
+
+# Prompt user for project name
+get_project_name() {
+    print_info "The release system uses 'YOUR_CANISTER' as a placeholder."
+    print_info "We need to customize it for your project."
+    echo ""
+    
+    # Try to detect project name from current directory
+    local detected_name=$(basename "$(pwd)")
+    
+    if [ "$detected_name" != "." ] && [ "$detected_name" != "/" ]; then
+        print_info "Detected project name from directory: $detected_name"
+        read -p "Use this as your project name? (y/n): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            PROJECT_NAME="$detected_name"
+        fi
+    fi
+    
+    # If no project name set yet, prompt for it
+    while [ -z "$PROJECT_NAME" ]; do
+        read -p "Enter your project name (e.g., my_project): " PROJECT_NAME
+        if [ -z "$PROJECT_NAME" ]; then
+            print_error "Project name cannot be empty"
+        elif [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
+            print_error "Project name must start with a letter and contain only letters, numbers, underscores, and hyphens"
+            PROJECT_NAME=""
+        fi
+    done
+    
+    print_success "Using project name: $PROJECT_NAME"
+    echo ""
+}
+
+# Replace YOUR_CANISTER references in a file
+replace_project_references() {
+    local file_path="$1"
+    local temp_file="${file_path}.tmp"
+    
+    if [ -f "$file_path" ]; then
+        # Replace YOUR_CANISTER with PROJECT_NAME
+        sed "s/YOUR_CANISTER/$PROJECT_NAME/g" "$file_path" > "$temp_file"
+        mv "$temp_file" "$file_path"
+    fi
 }
 
 # Check if we're in a git repository
@@ -393,6 +441,62 @@ EOF
     print_success "Template files created"
 }
 
+# Update project references in all files
+update_project_references() {
+    print_info "Updating project references from 'YOUR_CANISTER' to '$PROJECT_NAME'..."
+    
+    # List of files to update
+    local files_to_update=(
+        "$TEMP_DIR/Makefile"
+        "$TEMP_DIR/RELEASE.md"
+        "$TEMP_DIR/.github-templates/workflows/ci-cd.yml"
+        "$TEMP_DIR/.github-templates/workflows/release.yml"
+        "$TEMP_DIR/.github-templates/workflows/manual-deploy.yml"
+        "$TEMP_DIR/.github-templates/scripts/build.sh"
+        "$TEMP_DIR/.github-templates/scripts/create_checksums.sh"
+        "$TEMP_DIR/.github-templates/scripts/generate_changelog.sh"
+        "$TEMP_DIR/.github-templates/actions/release/action.yml"
+    )
+    
+    # Update each file
+    for file in "${files_to_update[@]}"; do
+        if [ -f "$file" ]; then
+            replace_project_references "$file"
+            print_success "Updated $file"
+        fi
+    done
+    
+    print_success "All project references updated"
+}
+
+# Remind user about required GitHub secrets
+remind_github_secrets() {
+    echo ""
+    print_warning "⚠️  IMPORTANT: GitHub Secrets Configuration Required"
+    echo "=================================================="
+    echo ""
+    echo "The release system requires the following GitHub secrets to be configured:"
+    echo ""
+    echo "🔐 Required Secrets:"
+    echo "  • IDENTITY_DEV    - PEM file content for development network deployment"
+    echo "  • IDENTITY_PROD   - PEM file content for production network deployment"
+    echo ""
+    echo "📋 How to configure secrets:"
+    echo "  1. Go to your GitHub repository"
+    echo "  2. Navigate to Settings → Secrets and variables → Actions"
+    echo "  3. Click 'New repository secret'"
+    echo "  4. Add each secret with the appropriate value"
+    echo ""
+    echo "🔑 For Internet Computer deployment:"
+    echo "  • IDENTITY_DEV: Your development network identity PEM file content"
+    echo "  • IDENTITY_PROD: Your production network identity PEM file content"
+    echo ""
+    echo "📝 Note: Without these secrets, deployment jobs will fail."
+    echo ""
+    read -p "Press Enter to continue with installation..."
+    echo ""
+}
+
 # Install the release system
 install_release_system() {
     print_info "Installing release system..."
@@ -501,8 +605,11 @@ main() {
     
     check_git_repo
     check_prerequisites
+    get_project_name
     download_release_system
     create_template_files
+    update_project_references
+    remind_github_secrets
     install_release_system
     update_cargo_version
     cleanup

@@ -1,135 +1,98 @@
 # Release Guide
 
-This guide explains how to create a new release for contributors.
+Quick guide for creating releases in this repository.
 
-## 🚀 Quick Release (Recommended)
+## Quick Release
 
-### Step 1: Prepare Your Changes
+1. **Make changes and commit with conventional format:**
 
-```bash
-# Ensure all changes are committed
-git status
-git add .
-git commit -m "feat: your changes description"
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   ```
+
+2. **Create a release:**
+
+   ```bash
+   make release-patch    # 0.1.0 → 0.1.1
+   make release-minor    # 0.1.0 → 0.2.0
+   make release-major    # 0.1.0 → 1.0.0
+   ```
+
+3. **Review changelog and push:**
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: update changelog"
+   git push origin main
+   ```
+
+## Manual Release Process
+
+1. **Check commit conventions:**
+
+   ```bash
+   make check-commits
+   ```
+
+2. **Fix any non-conventional commits:**
+
+   ```bash
+   make fix-commits
+   ```
+
+3. **Add changelog entry:**
+
+   ```bash
+   make add-changelog
+   ```
+
+4. **Create and push tag:**
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+## Commit Message Rules
+
+All commits must follow this format:
+
+```
+<type>: <description>
+
+Examples:
+feat: add user authentication
+fix: resolve login timeout
+docs: update API documentation
+chore: update dependencies
 ```
 
-### Step 2: Choose Release Type
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
-- **Patch** (0.1.0 → 0.1.1): Bug fixes, small improvements
-- **Minor** (0.1.0 → 0.2.0): New features, backward compatible
-- **Major** (0.1.0 → 1.0.0): Breaking changes
+## Common Issues
 
-### Step 3: Create Release
+**"Commit message doesn't follow conventions"**
 
-```bash
-# Automated release (recommended)
-make release-patch    # or release-minor, release-major
+- Use `make fix-commits` to rebase and fix
+- Or amend the last commit: `git commit --amend -m "feat: correct message"`
 
-# OR interactive release
-make interactive-release
-```
+**"Can't push after rebase"**
 
-That's it! The system will automatically:
+- Use: `git push --force-with-lease origin main`
 
-- ✅ Bump version in Cargo.toml
-- ✅ Generate changelog entry
-- ✅ Create and push git tag
-- ✅ Trigger GitHub release pipeline
+**"Changelog not updating"**
 
-## 📋 Manual Release Process
+- Run: `make add-changelog`
+- Or: `make generate-changelog-content`
 
-If you prefer manual control:
+## What Happens After Release
 
-### Step 1: Update Version
+1. GitHub Actions creates a release automatically
+2. Assets are built and uploaded
+3. Release notes are generated from changelog
+4. Deployment to production (if configured)
 
-```bash
-# Edit src/user_registry/Cargo.toml
-# Change version = "0.1.0" to "0.1.1"
-```
+## Need Help?
 
-### Step 2: Update Changelog
-
-```bash
-# Add entry at top of CHANGELOG.md
-## [0.1.1] - 2025-01-27
-
-### Added
-- Your new features
-
-### Changed
-- Your modifications
-
-### Fixed
-- Your bug fixes
-```
-
-### Step 3: Commit and Tag
-
-```bash
-git add .
-git commit -m "feat: release version 0.1.1"
-git tag -a v0.1.1 -m "Release v0.1.1"
-git push origin v0.1.1
-```
-
-## 🔒 Commit Message Rules
-
-**All commits must use these prefixes:**
-
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation
-- `chore:` - Maintenance
-- `refactor:` - Code refactoring
-- `test:` - Adding tests
-- `ci:` - CI/CD changes
-
-**Examples:**
-
-```bash
-git commit -m "feat: add user authentication"
-git commit -m "fix: resolve memory leak"
-git commit -m "docs: update API documentation"
-```
-
-## ⚠️ Common Issues
-
-### "Commit message does not follow conventional format"
-
-- Use one of the required prefixes (feat:, fix:, docs:, etc.)
-- Example: `git commit -m "feat: add new feature"`
-
-### "Working directory is not clean"
-
-- Commit or stash your changes before releasing
-- `git add . && git commit -m "feat: your changes"`
-
-### "Cannot push after rebase"
-
-- Use `git push --force-with-lease origin master`
-- Only if you're the only one working on the branch
-
-## 📊 What Happens After Release
-
-1. **GitHub Actions** automatically:
-
-   - Builds the canister
-   - Deploys to development
-   - Creates GitHub release
-   - Uploads assets (WASM, Candid, checksums)
-
-2. **Release assets** include:
-   - `user_registry.wasm.gz` - Compiled canister
-   - `user_registry.did` - Candid interface
-   - `canister_ids.json` - Canister identifiers
-
-## 🆘 Need Help?
-
-- **Check commands**: `make help`
-- **View changes**: `make show-changes`
-- **Check status**: `make show-status`
-- **Run tests**: `make test`
-
----
-
-**Remember**: Always use conventional commit messages and ensure your working directory is clean before releasing!
+- Check the `Makefile` for all available commands
+- Review GitHub Actions logs for deployment issues
+- See the main README.md for detailed documentation

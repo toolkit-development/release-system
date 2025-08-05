@@ -1,44 +1,31 @@
-name: Release
-description: Create a GitHub release with the WASM file
+name: "Release Action"
+description: "Create a GitHub release with assets"
 
 inputs:
-  wasm_file:
-    description: Path to the wasm file to release
+  version:
+    description: "Release version"
     required: true
-  github_token:
-    description: GitHub token for creating releases
-    required: true
+  release_notes:
+    description: "Release notes"
+    required: false
+    default: ""
 
 runs:
-  using: composite
+  using: "composite"
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Get version from Cargo.toml
+    - name: Extract version from Cargo.toml
       shell: bash
-      id: get_version
       run: |
-        VERSION=$(grep '^version = ' src/user_registry/Cargo.toml | cut -d '"' -f2)
+        VERSION=$(grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d '"' -f2)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    - name: Check CHANGELOG.md
-      shell: bash
-      run: |
-        VERSION="${{ steps.get_version.outputs.version }}"
-        if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
-          echo "Error: CHANGELOG.md does not contain an entry for version $VERSION"
-          exit 1
-        fi
-
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: ${{ inputs.wasm_file }}
-        tag_name: v${{ steps.get_version.outputs.version }}
-        name: Release v${{ steps.get_version.outputs.version }}
-        body: |
-          Release v${{ steps.get_version.outputs.version }}
-          
-          See CHANGELOG.md for details.
-        token: ${{ inputs.github_token }}
+        tag_name: v${{ inputs.version }}
+        release_name: Release v${{ inputs.version }}
+        body: ${{ inputs.release_notes }}
+        draft: false
+        prerelease: false
