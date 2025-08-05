@@ -397,22 +397,36 @@ EOF
 install_release_system() {
     print_info "Installing release system..."
     
-    # Copy files to current directory (including hidden files)
+    # Copy files to current directory (excluding .github-templates)
     # Enable dotglob for bash, or use alternative for zsh
     if [ -n "$BASH_VERSION" ]; then
         shopt -s dotglob 2>/dev/null || true
-        cp -r "$TEMP_DIR"/* .
+        # Copy all files except .github-templates
+        for item in "$TEMP_DIR"/*; do
+            if [ "$(basename "$item")" != ".github-templates" ]; then
+                cp -r "$item" .
+            fi
+        done
         shopt -u dotglob 2>/dev/null || true
     else
-        # For zsh or other shells, copy hidden files explicitly
-        cp -r "$TEMP_DIR"/* . 2>/dev/null || true
-        cp -r "$TEMP_DIR"/.[^.]* . 2>/dev/null || true
+        # For zsh or other shells, copy files explicitly
+        for item in "$TEMP_DIR"/*; do
+            if [ "$(basename "$item")" != ".github-templates" ]; then
+                cp -r "$item" . 2>/dev/null || true
+            fi
+        done
+        # Copy hidden files except .github-templates
+        for item in "$TEMP_DIR"/.[^.]*; do
+            if [ -e "$item" ] && [ "$(basename "$item")" != ".github-templates" ]; then
+                cp -r "$item" . 2>/dev/null || true
+            fi
+        done
     fi
     
-    # Rename .github-templates to .github if it exists
-    if [ -d ".github-templates" ]; then
-        mv .github-templates .github
-        print_success "Renamed .github-templates to .github"
+    # Handle .github-templates separately - copy contents directly to .github
+    if [ -d "$TEMP_DIR/.github-templates" ]; then
+        cp -r "$TEMP_DIR/.github-templates" .github
+        print_success "Copied .github-templates contents to .github"
     fi
     
     # Make scripts executable
