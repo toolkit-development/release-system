@@ -510,4 +510,4 @@ main() {
 }
 
 # Run main function
-main "$@" 
+main "$@" # Force cache refresh Tue Aug  5 21:52:01 CEST 2025
