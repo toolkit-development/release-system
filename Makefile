@@ -48,16 +48,31 @@ NEW_MAJOR_VERSION := $(shell echo $(MAJOR) + 1 | bc).0.0
 
 # Version bumping targets
 bump-patch:
-	@echo "Bumping patch version..."
-	@./scripts/bump_version.sh patch
+	@echo "Bumping patch version to $(NEW_PATCH_VERSION)..."
+	@if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_PATCH_VERSION)"/' src/YOUR_CANISTER/Cargo.toml; \
+	else \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_PATCH_VERSION)"/' Cargo.toml; \
+	fi
+	@echo "✅ Version bumped to $(NEW_PATCH_VERSION)"
 
 bump-minor:
-	@echo "Bumping minor version..."
-	@./scripts/bump_version.sh minor
+	@echo "Bumping minor version to $(NEW_MINOR_VERSION)..."
+	@if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_MINOR_VERSION)"/' src/YOUR_CANISTER/Cargo.toml; \
+	else \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_MINOR_VERSION)"/' Cargo.toml; \
+	fi
+	@echo "✅ Version bumped to $(NEW_MINOR_VERSION)"
 
 bump-major:
-	@echo "Bumping major version..."
-	@./scripts/bump_version.sh major
+	@echo "Bumping major version to $(NEW_MAJOR_VERSION)..."
+	@if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_MAJOR_VERSION)"/' src/YOUR_CANISTER/Cargo.toml; \
+	else \
+		sed -i.bak 's/^version = ".*"/version = "$(NEW_MAJOR_VERSION)"/' Cargo.toml; \
+	fi
+	@echo "✅ Version bumped to $(NEW_MAJOR_VERSION)"
 
 check-version:
 	@echo "Current version: $(CURRENT_VERSION)"
@@ -101,6 +116,81 @@ release-minor:
 release-major:
 	@echo "Creating major release $(NEW_MAJOR_VERSION)..."
 	@$(MAKE) _create-release VERSION=$(NEW_MAJOR_VERSION)
+
+# Internal release creation
+_create-release:
+	@echo "Checking prerequisites..."
+	@$(MAKE) check-commit-conventions
+	@echo "✅ Prerequisites check passed"
+	@echo "Starting release process..."
+	@echo "Current version: $(CURRENT_VERSION)"
+	@echo "New version: $(VERSION)"
+	@echo "Checking CHANGELOG.md for version $(VERSION)..."
+	@if ! grep -q "## \[$(VERSION)\]" CHANGELOG.md; then \
+		echo "⚠️  Warning: No changelog entry found for version $(VERSION)"; \
+		read -p "Would you like to add a placeholder entry? (y/n) " -n 1 -r; \
+		echo; \
+		if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+			echo "Adding placeholder changelog entry..."; \
+			$(MAKE) add-changelog-entry VERSION=$(VERSION); \
+		fi; \
+	fi
+	@echo "📝 Please review and edit CHANGELOG.md if needed"
+	@echo "Please ensure you have:"
+	@echo "1. Updated CHANGELOG.md with release notes"
+	@echo "2. Committed all changes"
+	@echo "3. Pushed to remote"
+	@read -p "Press Enter to continue with release tag creation..."
+	@echo "Creating git tag v$(VERSION)..."
+	@git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	@echo "Pushing tag to remote..."
+	@git push origin v$(VERSION)
+	@echo "✅ Release v$(VERSION) created and pushed!"
+
+# Changelog management
+add-changelog:
+	@read -p "Enter version (e.g., 0.1.0): " version; \
+	$(MAKE) add-changelog-entry VERSION=$$version
+
+add-changelog-entry:
+	@echo "Adding changelog entry for version $(VERSION)..."
+	@if [ ! -f CHANGELOG.md ]; then \
+		echo "# Changelog" > CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+	fi
+	@if ! grep -q "## \[$(VERSION)\]" CHANGELOG.md; then \
+		cp CHANGELOG.md CHANGELOG.md.tmp; \
+		head -n 4 CHANGELOG.md.tmp > CHANGELOG.md; \
+		echo "## [$(VERSION)] - $(date +%Y-%m-%d)" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Added" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Changed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Fixed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Removed" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Deprecated" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Security" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		echo "### Maintenance" >> CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		tail -n +5 CHANGELOG.md.tmp >> CHANGELOG.md; \
+		rm CHANGELOG.md.tmp; \
+		echo "✅ Added changelog entry for version $(VERSION)"; \
+	else \
+		echo "⚠️  Changelog entry for version $(VERSION) already exists"; \
+	fi
+
+generate-changelog-content:
+	@echo "Generating changelog content from commits..."
+	@echo "### Changes" >> CHANGELOG.md
+	@git log --oneline --no-merges $(shell git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | cut -d' ' -f2- | sed 's/^/- /' >> CHANGELOG.md
+	@echo "✅ Changelog content generated"
 
 # Prerequisites check
 check-prerequisites:
