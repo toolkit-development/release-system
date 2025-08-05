@@ -79,19 +79,19 @@ download_release_system() {
         "RELEASE.md"
         "CHANGELOG.md"
         "scripts/setup-release-system.sh"
-        ".github/workflows/ci-cd.yml"
-        ".github/workflows/release.yml"
-        ".github/workflows/manual-deploy.yml"
-        ".github/scripts/extract-nns-state.sh"
-        ".github/scripts/create_checksums.sh"
-        ".github/scripts/setup-nns-state.sh"
-        ".github/scripts/README.md"
-        ".github/scripts/build.sh"
-        ".github/scripts/add_prod_release_body.sh"
-        ".github/scripts/generate_changelog.sh"
-        ".github/actions/deploy/action.yml"
-        ".github/actions/release/action.yml"
-        ".github/actions/build/action.yml"
+        ".github-templates/workflows/ci-cd.yml"
+        ".github-templates/workflows/release.yml"
+        ".github-templates/workflows/manual-deploy.yml"
+        ".github-templates/scripts/extract-nns-state.sh"
+        ".github-templates/scripts/create_checksums.sh"
+        ".github-templates/scripts/setup-nns-state.sh"
+        ".github-templates/scripts/README.md"
+        ".github-templates/scripts/build.sh"
+        ".github-templates/scripts/add_prod_release_body.sh"
+        ".github-templates/scripts/generate_changelog.sh"
+        ".github-templates/actions/deploy/action.yml"
+        ".github-templates/actions/release/action.yml"
+        ".github-templates/actions/build/action.yml"
     )
     
     # Download files from release-system repository
@@ -117,11 +117,11 @@ create_template_files() {
     
     # Create directory structure
     mkdir -p "$TEMP_DIR/scripts"
-    mkdir -p "$TEMP_DIR/.github/workflows"
-    mkdir -p "$TEMP_DIR/.github/scripts"
-    mkdir -p "$TEMP_DIR/.github/actions/deploy"
-    mkdir -p "$TEMP_DIR/.github/actions/release"
-    mkdir -p "$TEMP_DIR/.github/actions/build"
+    mkdir -p "$TEMP_DIR/.github-templates/workflows"
+    mkdir -p "$TEMP_DIR/.github-templates/scripts"
+    mkdir -p "$TEMP_DIR/.github-templates/actions/deploy"
+    mkdir -p "$TEMP_DIR/.github-templates/actions/release"
+    mkdir -p "$TEMP_DIR/.github-templates/actions/build"
     
     # Create Makefile if not downloaded
     if [ ! -f "$TEMP_DIR/Makefile" ]; then
@@ -400,6 +400,12 @@ install_release_system() {
     # Copy files to current directory
     cp -r "$TEMP_DIR"/* .
     
+    # Rename .github-templates to .github if it exists
+    if [ -d ".github-templates" ]; then
+        mv .github-templates .github
+        print_success "Renamed .github-templates to .github"
+    fi
+    
     # Make scripts executable
     chmod +x scripts/setup-release-system.sh 2>/dev/null || true
     chmod +x .github/scripts/*.sh 2>/dev/null || true
@@ -495,4 +501,4 @@ main() {
 }
 
 # Run main function
-main "$@" # Updated Tue Aug  5 21:44:22 CEST 2025
+main "$@" 
