@@ -90,8 +90,15 @@ replace_project_references() {
     local temp_file="${file_path}.tmp"
     
     if [ -f "$file_path" ]; then
-        # Replace YOUR_CANISTER with PROJECT_NAME
-        sed "s/YOUR_CANISTER/$PROJECT_NAME/g" "$file_path" > "$temp_file"
+        # Use perl for safer string replacement (handles all special characters)
+        if command -v perl >/dev/null 2>&1; then
+            perl -pe "s/YOUR_CANISTER/\Q$PROJECT_NAME\E/g" "$file_path" > "$temp_file"
+        else
+            # Fallback: use sed with proper delimiter and escaping
+            # Use | as delimiter since it's less likely to be in project names
+            local escaped_name=$(printf '%s\n' "$PROJECT_NAME" | sed 's/[|&/\]/\\&/g')
+            sed "s|YOUR_CANISTER|$escaped_name|g" "$file_path" > "$temp_file"
+        fi
         mv "$temp_file" "$file_path"
     fi
 }
