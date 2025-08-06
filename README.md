@@ -7,14 +7,25 @@ A comprehensive release management system for Internet Computer canister project
 ### Install the Release System
 
 ```bash
-# One-liner installation (non-interactive)
-curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/setup.sh | bash
+# One-liner installation (latest version)
+curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/install.sh | bash
+
+# Install specific version
+curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/install.sh | bash -s -- --version v1.0.0
 
 # Or download and run interactively
 curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/setup.sh -o setup.sh
 chmod +x setup.sh
 ./setup.sh
 ```
+
+### Versioning
+
+The release-system itself is versioned to ensure stability and allow users to install specific versions:
+
+- **Latest**: Always installs the most recent version from `master` branch
+- **Specific Version**: Install a particular version for stability (e.g., `v1.0.0`)
+- **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for detailed changes between versions
 
 The setup script will:
 

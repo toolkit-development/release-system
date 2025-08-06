@@ -16,9 +16,6 @@ on:
         type: string
         default: ""
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   release:
     name: Create Release
@@ -66,17 +63,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./VERSION
-          asset_name: VERSION
-          asset_content_type: text/plain
-
-      - name: Upload Install Script
+      - name: Upload Core Scripts
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,3 +82,23 @@ jobs:
           asset_path: ./setup.sh
           asset_name: setup.sh
           asset_content_type: text/plain
+
+      - name: Upload Version File
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./VERSION
+          asset_name: VERSION
+          asset_content_type: text/plain
+
+      - name: Upload Changelog
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./CHANGELOG.md
+          asset_name: CHANGELOG.md
+          asset_content_type: text/markdown
