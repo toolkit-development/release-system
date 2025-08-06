@@ -36,7 +36,7 @@ help:
 
 # Get current version from Cargo.toml
 # Try to find version in the correct location (workspace vs package)
-CURRENT_VERSION := $(shell if [ -f "src/user_registry/Cargo.toml" ]; then grep '^version = ' src/user_registry/Cargo.toml | cut -d'"' -f2; else grep '^version = ' Cargo.toml | cut -d'"' -f2; fi)
+CURRENT_VERSION := $(shell if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then grep '^version = ' src/YOUR_CANISTER/Cargo.toml | cut -d'"' -f2; else grep '^version = ' Cargo.toml | cut -d'"' -f2; fi)
 
 # Version bumping targets
 bump-patch:
@@ -97,8 +97,8 @@ release-major: bump-major
 # Prerequisites check
 check-prerequisites:
 	@echo "Checking prerequisites..."
-	@if [ ! -f "src/user_registry/Cargo.toml" ] && [ ! -f "Cargo.toml" ]; then \
-		echo "❌ Cargo.toml not found in root or src/user_registry/"; \
+	@if [ ! -f "src/YOUR_CANISTER/Cargo.toml" ] && [ ! -f "Cargo.toml" ]; then \
+		echo "❌ Cargo.toml not found in root or src/YOUR_CANISTER/"; \
 		exit 1; \
 	fi
 	@if [ ! -f "CHANGELOG.md" ]; then \
