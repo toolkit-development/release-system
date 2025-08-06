@@ -20,6 +20,37 @@ TEMP_DIR="/tmp/release-system-setup"
 # Global variable to store project name
 PROJECT_NAME=""
 
+# Parse command line arguments for version
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --version)
+                RELEASE_SYSTEM_BRANCH="v$2"
+                shift 2
+                ;;
+            --help)
+                echo "Release System Setup"
+                echo ""
+                echo "Usage: $0 [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  --version VERSION    Use specific version (e.g., 1.0.0)"
+                echo "  --help              Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  $0                    # Use latest version"
+                echo "  $0 --version 1.0.0    # Use specific version"
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+}
+
 # Print colored output
 print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
@@ -653,6 +684,9 @@ main() {
     echo "🚀 Release System Setup"
     echo "========================"
     echo ""
+    
+    # Parse command line arguments
+    parse_arguments "$@"
     
     check_git_repo
     check_prerequisites

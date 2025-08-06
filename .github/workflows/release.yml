@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., 1.0.0)"
+        required: true
+        type: string
+      release_notes:
+        description: "Release notes (optional)"
+        required: false
+        type: string
+        default: ""
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Git Tag (Manual Trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag v${{ github.event.inputs.version }}
+          git push origin v${{ github.event.inputs.version }}
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
+          release_name: Release System ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
+          body: |
+            ## Release System ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
+            
+            ${{ github.event.inputs.release_notes }}
+            
+            ### Installation
+            
+            **Latest version:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/install.sh | bash
+            ```
+            
+            **Specific version:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/toolkit-development/release-system/master/install.sh | bash -s -- --version ${{ github.event.inputs.version || github.ref_name }}
+            ```
+            
+            ### What's New
+            
+            See the [changelog](https://github.com/toolkit-development/release-system/blob/master/CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./VERSION
+          asset_name: VERSION
+          asset_content_type: text/plain
+
+      - name: Upload Install Script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./install.sh
+          asset_name: install.sh
+          asset_content_type: text/plain
+
+      - name: Upload Setup Script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./setup.sh
+          asset_name: setup.sh
+          asset_content_type: text/plain
