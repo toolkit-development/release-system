@@ -473,6 +473,7 @@ update_project_references() {
         "$TEMP_DIR/Makefile"
         "$TEMP_DIR/RELEASE.md"
         "$TEMP_DIR/AFTER-RELEASE-SYSTEM-INSTALL.md"
+        "$TEMP_DIR/scripts/bump_version.sh"
         "$TEMP_DIR/.github-templates/workflows/ci-cd.yml"
         "$TEMP_DIR/.github-templates/workflows/release.yml"
         "$TEMP_DIR/.github-templates/workflows/manual-deploy.yml"
