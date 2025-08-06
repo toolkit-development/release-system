@@ -21,7 +21,7 @@ help:
 	@echo ""
 	@echo "Changelog Management:"
 	@echo "  add-changelog-entry     - Add changelog entry for current or specified version"
-	@echo "  update-changelog        - Update or create changelog entry for specific version"
+	@echo "  update-changelog        - Regenerate changelog entry for current version from commits"
 	@echo "  generate-changelog-content - Show changelog content from git commits"
 	@echo ""
 	@echo "Commit Management:"
@@ -276,26 +276,20 @@ add-changelog-entry:
 	@echo "✅ Added changelog entry for version $$VERSION_TO_ADD"
 	@echo "📝 Please review and edit CHANGELOG.md if needed"
 
-# Update or create changelog entry for a specific version
+# Update changelog entry for current version based on commits
 update-changelog:
 	@echo "Update Changelog Entry"
 	@echo "====================="
 	@echo "Current version: $(CURRENT_VERSION)"
 	@echo ""
-	@read -p "Enter version to update (e.g., 1.0.0): " VERSION_TO_UPDATE; \
-	if [ -z "$$VERSION_TO_UPDATE" ]; then \
-		echo "❌ No version specified. Using current version: $(CURRENT_VERSION)"; \
-		VERSION_TO_UPDATE="$(CURRENT_VERSION)"; \
-	fi; \
-	echo ""; \
-	echo "Updating changelog for version $$VERSION_TO_UPDATE..."; \
+	@echo "Updating changelog for version $(CURRENT_VERSION)..."; \
 	TODAY=$$(date +%Y-%m-%d); \
 	cp CHANGELOG.md CHANGELOG.md.backup; \
 	# Check if version already exists in changelog \
-	if grep -q "## \[$$VERSION_TO_UPDATE\]" CHANGELOG.md; then \
-		echo "📝 Version $$VERSION_TO_UPDATE found in changelog. Replacing entry..."; \
+	if grep -q "## \[$(CURRENT_VERSION)\]" CHANGELOG.md; then \
+		echo "📝 Version $(CURRENT_VERSION) found in changelog. Replacing entry..."; \
 		# Remove existing entry for this version \
-		awk -v version="$$VERSION_TO_UPDATE" ' \
+		awk -v version="$(CURRENT_VERSION)" ' \
 			BEGIN { in_version = 0; skip = 0; } \
 			/^## \[/ { \
 				if (in_version) { \
@@ -313,28 +307,21 @@ update-changelog:
 		' CHANGELOG.md > CHANGELOG.md.temp; \
 		mv CHANGELOG.md.temp CHANGELOG.md; \
 	else \
-		echo "📝 Version $$VERSION_TO_UPDATE not found. Creating new entry..."; \
+		echo "📝 Version $(CURRENT_VERSION) not found. Creating new entry..."; \
 	fi; \
 	# Add new entry after the header \
 	head -n 6 CHANGELOG.md > CHANGELOG.md.new; \
 	echo "" >> CHANGELOG.md.new; \
-	echo "## [$$VERSION_TO_UPDATE] - $$TODAY" >> CHANGELOG.md.new; \
+	echo "## [$(CURRENT_VERSION)] - $$TODAY" >> CHANGELOG.md.new; \
 	echo "" >> CHANGELOG.md.new; \
-	# Generate changelog content for this specific version \
-	LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo ""); \
-	if [ -n "$$LAST_TAG" ]; then \
-		echo "Generating changelog from commits since $$LAST_TAG..."; \
-		git log --oneline $$LAST_TAG..HEAD | grep -E "^[a-f0-9]+ (feat|add|new|implement|change|update|modify|improve|fix|bugfix|resolve|chore|refactor|cleanup|docs|revert|test|ci|build|style|perf):" | cut -d' ' -f2- | head -20 >> CHANGELOG.md.new; \
-	else \
-		echo "No previous tag found. Generating changelog from recent commits..."; \
-		git log --oneline --since="1 month ago" | grep -E "^[a-f0-9]+ (feat|add|new|implement|change|update|modify|improve|fix|bugfix|resolve|chore|refactor|cleanup|docs|revert|test|ci|build|style|perf):" | cut -d' ' -f2- | head -20 >> CHANGELOG.md.new; \
-	fi; \
+	# Generate changelog content using the existing generate-changelog-content target \
+	$(MAKE) generate-changelog-content >> CHANGELOG.md.new; \
 	echo "" >> CHANGELOG.md.new; \
 	# Add the rest of the changelog \
 	tail -n +7 CHANGELOG.md >> CHANGELOG.md.new; \
 	mv CHANGELOG.md.new CHANGELOG.md; \
 	rm CHANGELOG.md.backup
-	@echo "✅ Updated changelog entry for version $$VERSION_TO_UPDATE"
+	@echo "✅ Updated changelog entry for version $(CURRENT_VERSION)"
 	@echo "📝 Please review and edit CHANGELOG.md if needed"
 
 # Generate changelog content from git commits
