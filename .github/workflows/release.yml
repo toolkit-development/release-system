@@ -64,8 +64,8 @@ jobs:
           ### What's New
 
           See the [changelog](https://github.com/toolkit-development/release-system/blob/master/CHANGELOG.md) for detailed changes." \
-              --draft false \
-              --prerelease false
+              --draft=false \
+              --prerelease=false
           else
             # For tag pushes, create a release from the existing tag
             gh release create ${{ github.ref_name }} \
@@ -87,8 +87,8 @@ jobs:
           ### What's New
 
           See the [changelog](https://github.com/toolkit-development/release-system/blob/master/CHANGELOG.md) for detailed changes." \
-              --draft false \
-              --prerelease false
+              --draft=false \
+              --prerelease=false
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
