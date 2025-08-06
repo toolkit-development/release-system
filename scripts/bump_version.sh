@@ -92,23 +92,14 @@ main() {
     
     print_info "Starting version bump process..."
     
-    # Try to find Cargo.toml in different locations
+    # Only update the specific package Cargo.toml file
     local cargo_files=()
     
-    # Check for workspace Cargo.toml
-    if [ -f "Cargo.toml" ]; then
-        cargo_files+=("Cargo.toml")
-    fi
-    
-    # Check for package Cargo.toml in common locations
-    for dir in src/*/; do
-        if [ -d "$dir" ] && [ -f "${dir}Cargo.toml" ]; then
-            cargo_files+=("${dir}Cargo.toml")
-        fi
-    done
-    
-    if [ ${#cargo_files[@]} -eq 0 ]; then
-        print_error "No Cargo.toml files found in the project"
+    # Check for the specific package Cargo.toml
+    if [ -f "src/YOUR_CANISTER/Cargo.toml" ]; then
+        cargo_files+=("src/YOUR_CANISTER/Cargo.toml")
+    else
+        print_error "Package Cargo.toml not found at src/YOUR_CANISTER/Cargo.toml"
         exit 1
     fi
     
