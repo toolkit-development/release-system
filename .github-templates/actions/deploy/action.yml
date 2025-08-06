@@ -35,4 +35,4 @@ runs:
       env:
         DFX_WARNING: -mainnet_plaintext_identity
       run: |
-        dfx canister install ${{ inputs.canister_name }} --network ${{ inputs.network }} --wasm ${{ inputs.wasm_file }} --mode upgrade
+        dfx canister install ${{ inputs.canister_name }} --network ${{ inputs.network }} --wasm ${{ inputs.wasm_file }} --mode auto
