@@ -5,7 +5,7 @@ echo "Creating checksums for release assets..."
 
 # Create checksums
 sha256sum wasm/YOUR_CANISTER.wasm.gz > wasm/YOUR_CANISTER.wasm.gz.sha256
-sha256sum YOUR_CANISTER.did > YOUR_CANISTER.did.sha256
+sha256sum src/YOUR_CANISTER/YOUR_CANISTER.did > YOUR_CANISTER.did.sha256
 
 # Create combined checksum file
 echo "Combined checksums:" > checksums.txt
