@@ -567,9 +567,25 @@ install_release_system() {
         print_success "Copied .github-templates contents to .github"
     fi
     
-    # Make scripts executable
-    chmod +x scripts/setup-release-system.sh 2>/dev/null || true
-    chmod +x .github/scripts/*.sh 2>/dev/null || true
+    # Make all scripts executable
+    print_info "Setting up file permissions..."
+    
+    # Make scripts in the scripts directory executable
+    if [ -d "scripts" ]; then
+        chmod +x scripts/*.sh 2>/dev/null || true
+        print_success "Made scripts/ directory scripts executable"
+    fi
+    
+    # Make .github scripts executable
+    if [ -d ".github/scripts" ]; then
+        chmod +x .github/scripts/*.sh 2>/dev/null || true
+        print_success "Made .github/scripts/ directory scripts executable"
+    fi
+    
+    # Make any other shell scripts executable (in case there are more)
+    find . -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
+    
+    print_success "File permissions configured"
     
     # Create git hook for commit message validation
     print_info "Setting up git hooks..."
