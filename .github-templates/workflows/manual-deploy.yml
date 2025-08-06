@@ -147,10 +147,12 @@ jobs:
           echo "Current version: $VERSION"
 
           # Deploy to production network
-          dfx canister install --network ic YOUR_CANISTER --mode upgrade --wasm wasm/YOUR_CANISTER.wasm.gz
+          dfx canister install --network ic YOUR_CANISTER --mode auto --wasm wasm/YOUR_CANISTER.wasm.gz
 
           echo "✅ Deployment to production network completed"
-
+        env:
+          DFX_NETWORK: ic
+          DFX_WARNING: -mainnet_plaintext_identity
       - name: Generate release body
         id: release_body
         run: |

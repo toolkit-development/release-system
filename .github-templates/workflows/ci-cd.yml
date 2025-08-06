@@ -295,7 +295,7 @@ jobs:
           echo "WASM file: $(ls -la wasm/YOUR_CANISTER.wasm.gz)"
 
           # Install the pre-built WASM file directly
-          dfx canister install --network dev YOUR_CANISTER --mode upgrade --wasm wasm/YOUR_CANISTER.wasm.gz
+          dfx canister install --network dev YOUR_CANISTER --mode auto --wasm wasm/YOUR_CANISTER.wasm.gz
 
           echo "✅ Dev deployment completed using pre-built WASM"
         env:
