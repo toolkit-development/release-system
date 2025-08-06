@@ -20,7 +20,7 @@ help:
 	@echo "  release-major - Release with major version bump"
 	@echo ""
 	@echo "Changelog Management:"
-	@echo "  add-changelog-entry     - Add changelog entry for current or specified version"
+	@echo "  add-changelog-entry     - Add changelog entry for current version"
 	@echo "  update-changelog        - Update or create changelog entry for specific version"
 	@echo "  generate-changelog-content - Show changelog content from git commits"
 	@echo ""
@@ -250,30 +250,20 @@ interactive-release:
 		*) echo "Invalid choice. Please run 'make interactive-release' again." ;; \
 	esac
 
-# Add changelog entry for current version or specified version
+# Add changelog entry for current version
 add-changelog-entry:
-	@echo "Add Changelog Entry"
-	@echo "=================="
-	@echo "Current version: $(CURRENT_VERSION)"
-	@echo ""
-	@read -p "Enter version to add (or press Enter for current version): " VERSION_TO_ADD; \
-	if [ -z "$$VERSION_TO_ADD" ]; then \
-		echo "📝 Using current version: $(CURRENT_VERSION)"; \
-		VERSION_TO_ADD="$(CURRENT_VERSION)"; \
-	fi; \
-	echo ""; \
-	echo "Adding changelog entry for version $$VERSION_TO_ADD..."; \
-	TODAY=$$(date +%Y-%m-%d); \
+	@echo "Adding changelog entry for version $(CURRENT_VERSION)..."
+	@TODAY=$$(date +%Y-%m-%d); \
 	cp CHANGELOG.md CHANGELOG.md.backup; \
 	head -n 6 CHANGELOG.md.backup > CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
-	echo "## [$$VERSION_TO_ADD] - $$TODAY" >> CHANGELOG.md; \
+	echo "## [$(CURRENT_VERSION)] - $$TODAY" >> CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
 	$(MAKE) generate-changelog-content >> CHANGELOG.md; \
 	echo "" >> CHANGELOG.md; \
 	tail -n +7 CHANGELOG.md.backup >> CHANGELOG.md; \
 	rm CHANGELOG.md.backup
-	@echo "✅ Added changelog entry for version $$VERSION_TO_ADD"
+	@echo "✅ Added changelog entry for version $(CURRENT_VERSION)"
 	@echo "📝 Please review and edit CHANGELOG.md if needed"
 
 # Update or create changelog entry for a specific version
