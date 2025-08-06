@@ -217,7 +217,7 @@ jobs:
           path: |
             wasm/YOUR_CANISTER.wasm.gz
             wasm/YOUR_CANISTER.wasm.gz.sha256
-            YOUR_CANISTER.did
+            src/YOUR_CANISTER/YOUR_CANISTER.did
             YOUR_CANISTER.did.sha256
             canister_ids.json
             canister_ids.json.sha256

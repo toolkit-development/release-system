@@ -234,7 +234,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./YOUR_CANISTER.did
+          asset_path: ./src/YOUR_CANISTER/YOUR_CANISTER.did
           asset_name: YOUR_CANISTER.did
           asset_content_type: text/plain
 
